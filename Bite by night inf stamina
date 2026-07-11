@@ -1,0 +1,17 @@
+local p = game.Players.LocalPlayer.Character
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function(ch)
+    p = ch
+end)
+
+local st
+st = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if not checkcaller() and p and self == p and method == "GetAttribute" and args[1] == "Stamina" then
+        return 100
+    end
+
+    return st(self, ...)
+end))
