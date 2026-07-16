@@ -1,0 +1,200 @@
+--/ TẠO GIAO DIỆN (GUI)
+local CoreGui = game:GetService("CoreGui")
+
+if CoreGui:FindFirstChild("UniversalFullRemoteSpy") then
+    CoreGui.UniversalFullRemoteSpy:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UniversalFullRemoteSpy"
+ScreenGui.Parent = CoreGui
+
+-- Khung chính hình chữ nhật
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 340, 0, 440)
+MainFrame.Position = UDim2.new(0.05, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 25)
+MainFrame.BorderSizePixel = 1
+MainFrame.BorderColor3 = Color3.fromRGB(45, 48, 55)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Thanh Tiêu Đề
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(28, 30, 35)
+Title.BorderSizePixel = 0
+Title.Text = "  REMOTE SPY (PRO COPIER) [MAX: 100]"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 14
+Title.Parent = MainFrame
+
+-- Khung chứa danh sách hỗ trợ lướt xuống
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Size = UDim2.new(1, -10, 1, -50)
+ScrollingFrame.Position = UDim2.new(0, 5, 0, 45)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 6
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ScrollingFrame.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ScrollingFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 4)
+
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
+end)
+
+--/ QUẢN LÝ BUTTON & CHỨC NĂNG COPIER
+local buttonCount = 0
+local maxButtons = 100
+
+-- Nút CLEAR LOGS
+local ClearBtn = Instance.new("TextButton")
+ClearBtn.Size = UDim2.new(0, 65, 0, 30)
+ClearBtn.Position = UDim2.new(1, -70, 0, 5)
+ClearBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+ClearBtn.BorderSizePixel = 0
+ClearBtn.Text = "CLEAR"
+ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearBtn.Font = Enum.Font.SourceSansBold
+ClearBtn.TextSize = 12
+ClearBtn.Parent = MainFrame
+
+ClearBtn.MouseButton1Click:Connect(function()
+    for _, child in ipairs(ScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    buttonCount = 0
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+end)
+
+-- Hàm chuyển đổi đường dẫn Remote thành dạng game:GetService(...):WaitForChild(...)
+local function getSafePath(instance)
+    local pathParts = {}
+    local current = instance
+
+    while current and current ~= game do
+        table.insert(pathParts, 1, current.Name)
+        current = current.Parent
+    end
+
+    local serviceName = pathParts[1]
+    if not serviceName then return "game." .. instance.Name end
+
+    -- Khởi tạo chuỗi bằng GetService
+    local formattedPath = string.format('game:GetService("%s")', serviceName)
+    
+    -- Thêm các cấp WaitForChild phía sau
+    for i = 2, #pathParts do
+        formattedPath = formattedPath .. string.format(':WaitForChild("%s")', pathParts[i])
+    end
+
+    return formattedPath
+end
+
+-- Tạo Nút Remote hình chữ nhật
+local function createLogButton(remoteInstance, method, args)
+    if buttonCount >= maxButtons then
+        local children = ScrollingFrame:GetChildren()
+        for _, child in ipairs(children) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+                buttonCount = buttonCount - 1
+                break
+            end
+        end
+    end
+
+    buttonCount = buttonCount + 1
+
+    local isEvent = (method:lower() == "fireserver")
+    local tagText = isEvent and "[Event]" or "[Func]"
+    local tagColor = isEvent and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(255, 105, 180)
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -8, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(32, 35, 40)
+    btn.BorderSizePixel = 1
+    btn.BorderColor3 = Color3.fromRGB(45, 48, 55)
+    btn.Text = "  " .. tagText .. " " .. remoteInstance.Name
+    btn.TextColor3 = tagColor
+    btn.Font = Enum.Font.SourceSansSemibold
+    btn.TextSize = 13
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Parent = ScrollingFrame
+
+    -- Xử lý thông minh khi Click Sao Chép
+    btn.MouseButton1Click:Connect(function()
+        local argsTable = {}
+        for i, v in pairs(args) do
+            if type(v) == "string" then
+                table.insert(argsTable, '"' .. tostring(v) .. '"')
+            elseif type(v) == "userdata" then
+                pcall(function()
+                    -- Chuyển đổi các Instance con truyền vào tham số thành đường dẫn an toàn luôn
+                    argsTable[i] = getSafePath(v)
+                end)
+            else
+                table.insert(argsTable, tostring(v))
+            end
+        end
+        
+        -- Lấy đường dẫn an toàn tuyệt đối của Remote gốc
+        local safeRemotePath = getSafePath(remoteInstance)
+        local codeToCopy = ""
+
+        if #argsTable > 0 then
+            local formattedArgs = table.concat(argsTable, ", ")
+            codeToCopy = string.format(
+                "local args = {\n    %s\n}\n\n%s:%s(unpack(args))", 
+                formattedArgs, safeRemotePath, method
+            )
+        else
+            codeToCopy = string.format("%s:%s()", safeRemotePath, method)
+        end
+        
+        setclipboard(codeToCopy)
+        
+        -- Hiệu ứng phản hồi trực quan
+        btn.BackgroundColor3 = Color3.fromRGB(30, 144, 255)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Text = "  ✔️ COPIED PRO CODE!"
+        task.wait(0.4)
+        btn.BackgroundColor3 = Color3.fromRGB(32, 35, 40)
+        btn.TextColor3 = tagColor
+        btn.Text = "  " .. tagText .. " " .. remoteInstance.Name
+    end)
+end
+
+--/ HOOK METAMETHOD LẮNG NGHE
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    if self then
+        if (method == "FireServer" or method == "fireServer") and self:IsA("RemoteEvent") then
+            task.spawn(function()
+                createLogButton(self, "FireServer", args)
+            end)
+        elseif (method == "InvokeServer" or method == "invokeServer") and self:IsA("RemoteFunction") then
+            task.spawn(function()
+                createLogButton(self, "InvokeServer", args)
+            end)
+        end
+    end
+    
+    return oldNamecall(self, ...)
+end)
