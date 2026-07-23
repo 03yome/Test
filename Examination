@@ -1,0 +1,13 @@
+local player = game.Players.LocalPlayer
+
+local function setup(char)
+    local State = require(char:WaitForChild("Client"):WaitForChild("State"))
+    game:GetService("RunService").Heartbeat:Connect(function()
+        State.stamina.current = 200
+        State.stamina.fullRegen = false
+        State.stamina.regenDelay = 0
+    end)
+end
+
+if player.Character then setup(player.Character) end
+player.CharacterAdded:Connect(setup)
