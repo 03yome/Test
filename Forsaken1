@@ -1,0 +1,8 @@
+local Sprinting = game:GetService("ReplicatedStorage").Systems.Character.Game.Sprinting
+local stamina = require(Sprinting)
+stamina.MaxStamina = 100
+stamina.MinStamina = -20
+stamina.StaminaGain = 100
+stamina.StaminaLoss = 5
+stamina.SprintSpeed = 40
+stamina.StaminaLossDisabled = true
