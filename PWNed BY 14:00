@@ -1,0 +1,25 @@
+while true do
+    local player = game:GetService("Players").LocalPlayer
+    local char = workspace:FindFirstChild("Living")
+        and workspace.Living:FindFirstChild(player.Name)
+
+    if char then
+        local values = char:FindFirstChild("Values")
+        if values then
+            local speed = values:FindFirstChild("Speed")
+            if speed then
+                local regen = speed:FindFirstChild("StaminaRegenerationMultiplier")
+                local max = speed:FindFirstChild("MaxStamina")
+
+                if regen then
+                    regen.Value = 99999999
+                end
+                if max then
+                    max.Value = 99999999
+                end
+            end
+        end
+    end
+
+    task.wait(1)
+end
