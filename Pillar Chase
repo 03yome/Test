@@ -1,0 +1,21 @@
+local player = game:GetService("Players").LocalPlayer
+
+while true do
+	local charFolder = workspace:FindFirstChild(player.Name)
+
+	if charFolder and charFolder:FindFirstChild("Aspects") then
+		local stamina = charFolder.Aspects:FindFirstChild("Stamina")
+
+		if stamina then
+			if stamina:FindFirstChild("DrainSpeed") then
+				stamina.DrainSpeed.Value = 0
+			end
+
+			if stamina:FindFirstChild("DrainAmount") then
+				stamina.DrainAmount.Value = 0
+			end
+		end
+	end
+
+	task.wait(3)
+end
